@@ -1,25 +1,33 @@
+using BowlingLeague.Data;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
+// Add services to the container
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
+// Add CORS policy to allow React frontend
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAllOrigins",
+        policy =>
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        });
+});
+
+// Configure database context with SQLite
+builder.Services.AddDbContext<BowlerDbContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("BowlingLeagueDb")));
+builder.Services.AddScoped<BowlerRepository>();
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
+// Middleware pipeline
 app.UseHttpsRedirection();
-
+app.UseCors("AllowAllOrigins"); // Place AFTER UseHttpsRedirection, BEFORE UseAuthorization
 app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();
